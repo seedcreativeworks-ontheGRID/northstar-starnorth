@@ -1,0 +1,8 @@
+- [Support control grouping](support-control-grouping.md) — Keep Help and Support Centre distinct but visually grouped; notifications remain outside the frame.
+- [Dashboard persistence scope](dashboard-persistence-scope.md) — Demo mutations are tab-scoped session state, not durable banking changes.
+- [Dashboard profile parity](dashboard-profile-parity.md) — Ben and James have distinct data views, but shared controls must remain equally interactive.
+- [Concurrent dashboard panels](concurrent-dashboard-panels.md) — On desktop, Insights and Help open side by side and push the dashboard left; they never form one vertical drawer.
+- [Playwright Chromium on Nix](playwright-chromium-nix.md) — Chromium needs explicit libgbm on this Nix image; mesa alone does not provide the required shared library.
+- [Vercel AI production fallback](vercel-ai-production-fallback.md) — Keep grounded live chat replies when AI Gateway rejects OIDC for an unverified billing account.
+- [Vercel manual deploy recipe](vercel-manual-deploy.md) — Site isn't auto-updated; rebuild and inline-file POST to /v13/deployments, reading files via fs in an impure block.
+- [Rail menu semantics](rail-menu-semantics.md) — Header rail menu is a tablist that resets to Quick Access on open; scrollable containers are Tab-focusable in Chrome, so keep tabIndex -1 on the rail.

@@ -1,0 +1,224 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: dashboard
+    description: Northstar dashboard persistence operations
+  - name: insights
+    description: Context-aware business insight conversations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /dashboard-state:
+    get:
+      operationId: getDashboardState
+      tags: [dashboard]
+      summary: Get dashboard state
+      description: Returns saved transfers and approval decisions for the Northstar dashboard
+      responses:
+        "200":
+          description: Saved dashboard state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardState"
+  /transfers:
+    post:
+      operationId: createTransfer
+      tags: [dashboard]
+      summary: Create a transfer
+      description: Saves a completed internal transfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferInput"
+      responses:
+        "201":
+          description: Transfer created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "400":
+          description: Invalid transfer
+  /approvals/{approvalId}:
+    patch:
+      operationId: updateApproval
+      tags: [dashboard]
+      summary: Update an approval decision
+      description: Saves an approved or rejected outcome
+      parameters:
+        - name: approvalId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalUpdate"
+      responses:
+        "200":
+          description: Approval updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Approval"
+        "400":
+          description: Invalid approval decision
+        "404":
+          description: Approval not found
+  /insights/chat:
+    post:
+      operationId: sendInsightMessage
+      tags: [insights]
+      summary: Send a Business Insights chat message
+      description: Returns a context-aware response grounded in the selected fictional dashboard insight
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InsightChatInput"
+      responses:
+        "200":
+          description: Assistant response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsightChatResponse"
+        "400":
+          description: Invalid chat message
+        "403":
+          description: Cross-origin chat requests are not allowed
+        "429":
+          description: Too many chat requests
+        "503":
+          description: AI service temporarily unavailable
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    Transaction:
+      type: object
+      required: [id, account, type, credit, debit, posted, date]
+      properties:
+        id:
+          type: string
+        account:
+          type: string
+        type:
+          type: string
+        credit:
+          type: ["number", "null"]
+        debit:
+          type: ["number", "null"]
+        posted:
+          type: string
+        date:
+          type: string
+    TransferInput:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 190939.9
+    Approval:
+      type: object
+      required: [id, title, detail, status]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+    ApprovalUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [approved, rejected]
+    DashboardState:
+      type: object
+      required: [transfers, approvals]
+      properties:
+        transfers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+        approvals:
+          type: array
+          items:
+            $ref: "#/components/schemas/Approval"
+    InsightChatMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+          minLength: 1
+          maxLength: 2000
+    InsightChatInput:
+      type: object
+      required: [user, insightKey, message, history]
+      properties:
+        user:
+          type: string
+          enum: [ben, james]
+        insightKey:
+          type: string
+          enum: [shortfall, flagged, vendor]
+        message:
+          type: string
+          minLength: 1
+          maxLength: 1200
+        history:
+          type: array
+          maxItems: 8
+          items:
+            $ref: "#/components/schemas/InsightChatMessage"
+    InsightChatResponse:
+      type: object
+      required: [reply]
+      properties:
+        reply:
+          type: string

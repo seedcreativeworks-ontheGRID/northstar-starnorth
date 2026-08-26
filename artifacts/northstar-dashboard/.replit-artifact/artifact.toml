@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Northstar Business Dashboard"
+description = "A fully interactive fictional business banking dashboard with account balances, transaction activity, approvals, transfer workflows, reports, cash-flow trends, and contextual insights."
+version = "1.0.0"
+id = "artifacts/northstar-dashboard"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23116
+
+[services.development]
+run = "pnpm --filter @workspace/northstar-dashboard run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/northstar-dashboard", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/northstar-dashboard/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23116"
+BASE_PATH = "/"

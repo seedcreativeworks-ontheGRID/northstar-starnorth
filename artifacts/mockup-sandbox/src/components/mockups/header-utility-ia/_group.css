@@ -1,0 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+.northstar-utility-ia {
+  --northstar-blue: #0067d8;
+  --northstar-navy: #111b31;
+  --northstar-muted: #63738e;
+  --northstar-line: #dce5f0;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: var(--northstar-navy);
+}
+
+.northstar-utility-ia * {
+  box-sizing: border-box;
+}
