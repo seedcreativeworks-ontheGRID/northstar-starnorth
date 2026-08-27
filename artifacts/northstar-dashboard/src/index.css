@@ -395,3 +395,16 @@
     padding: 0.75rem;
   }
 }
+
+@keyframes river-flow {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-river-flow {
+  animation: river-flow 45s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-river-flow {
+    animation-play-state: paused !important;
+  }
+}

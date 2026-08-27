@@ -52,8 +52,40 @@ export async function mockDashboardState(
 }
 
 export async function openDashboard(page: Page) {
+  let authenticated = true;
+  await page.route(/\/api\/auth\/session$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(authenticated
+        ? {
+            authenticated: true,
+            flow: "direct",
+            profile: "ben",
+            questionnaireRequired: false,
+            profileLocked: false,
+          }
+        : { authenticated: false }),
+    });
+  });
+  await page.route(/\/api\/auth\/login$/, async (route) => {
+    authenticated = true;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ authenticated: true }),
+    });
+  });
+  await page.route(/\/api\/auth\/logout$/, async (route) => {
+    authenticated = false;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ authenticated: false }),
+    });
+  });
   await page.goto("/");
-  await page.getByRole("heading", { name: "Welcome Ben!" }).waitFor();
+  await page.getByRole("heading", { name: /^Welcome (Ben|James)!$/ }).waitFor();
   await page
     .getByText("Loading saved transaction activity…")
     .waitFor({ state: "hidden" });

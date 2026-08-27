@@ -1,0 +1,39 @@
+import { useState } from "react";
+import { ArrowRight, CheckCircle2, FileCheck2, FileText, Grid2X2, Landmark, Menu, Shield, X } from "lucide-react";
+
+const data = [
+  { id: "quick", label: "Quick Access", icon: Grid2X2, eyebrow: "Everyday navigation", title: "Start with the essentials", copy: "Keep your most-used destinations close, with a direct path back to your workspace.", items: [["Home", "Return to your dashboard overview."], ["Accounts Information", "View balances and transaction history."], ["Administration", "Manage users, roles, and settings."], ["Marketplace", "Discover new banking products and services."]] },
+  { id: "payments", label: "Payments & Transfers", icon: Landmark, eyebrow: "Move money with confidence", title: "Payments, in your rhythm", copy: "Send, receive, and reconcile funds through the rails your business already uses.", items: [["Account Transfer", "Move funds between your Northstar accounts."], ["ACH Payments", "Process bulk domestic payments electronically."], ["Electronic Funds Transfer (EFT)", "Send funds securely to domestic vendors."], ["EFT Client Returns", "Manage returned and rejected EFT transactions."], ["File Transfer Facility (FTF)", "Batch process high-volume payment files."], ["Interac e-Transfer", "Send money instantly via email or text in Canada.", "CA"], ["Wire Payment", "Execute same-day domestic or international wires."], ["Zelle", "Fast, safe, and easy way to send money in the US.", "US"]] },
+  { id: "cheques", label: "Cheques", icon: FileCheck2, eyebrow: "Cheque operations", title: "A sharper view of cheques", copy: "Deposit, reconcile, and protect every paper-based payment from one focused place.", items: [["Northstar DepositEdge", "Scan and deposit cheques remotely from your office."], ["Digital Cheque Service (DCS)", "Manage outsourced cheque printing and mailing."], ["Recon Management", "Automate cheque reconciliation and reduce fraud.", "US"], ["Stop Payments", "Place, manage, or cancel stop payment requests."], ["Cheque Imaging", "View and download copies of cleared cheques."]] },
+  { id: "reports", label: "Reports", icon: FileText, eyebrow: "Operational clarity", title: "Reports when you need them", copy: "Find the reporting tools that support review, delivery, and audit-ready operations.", items: [["Account transfer reports", "Detailed logs of internal account movements."], ["Wire Payment reports", "Comprehensive history of incoming and outgoing wires."], ["Electronic Report Delivery (ERD)", "Secure distribution of periodic bank statements."], ["File Transfer Facility (FTF) reports", "Audit trails for your batch file processing."], ["Recon Management reports", "Discrepancy analysis for your cheque accounts."], ["ACH reports", "Transaction summaries for ACH batches."], ["Stop payments reports", "Status tracking for all stop requests."], ["Digital Cheque Services reports", "Analytics on outsourced cheque issuance."]] },
+];
+
+export function ContextualSidePanel() {
+  const [active, setActive] = useState("payments");
+  const [notice, setNotice] = useState("");
+  const current = data.find((item) => item.id === active) ?? data[1];
+  const Icon = current.icon;
+  return <main className="min-h-screen bg-[#f5f8fb] text-[#142a43] font-['Plus_Jakarta_Sans',sans-serif]">
+    <header className="h-[70px] bg-white border-b border-[#dce5ed] px-8 flex items-center justify-between">
+      <div className="flex items-center gap-4"><button aria-label="Open menu" className="text-[#597087] p-2 rounded-md hover:bg-[#edf3f8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1674c5]"><Menu size={18} /></button><div className="flex items-center gap-2.5"><div className="h-8 w-8 rounded-md bg-[#0f6fc3] text-white grid place-items-center"><Landmark size={16} /></div><span className="font-bold tracking-[-0.04em] text-[18px]">Northstar</span></div></div>
+      <div className="flex items-center gap-3"><span className="text-[11px] text-[#8293a5]">Business banking workspace</span><div className="w-8 h-8 rounded-full bg-[#d9e6f1] grid place-items-center text-[10px] font-bold text-[#315777]">NS</div></div>
+    </header>
+    <div className="flex min-h-[calc(100vh-70px)]">
+      <nav aria-label="Service groups" className="w-[230px] shrink-0 bg-[#102f4d] text-white px-4 py-8">
+        <p className="text-[10px] uppercase tracking-[0.18em] text-[#8eaec9] font-bold px-3 mb-5">Explore services</p>
+        {data.map((item) => { const NavIcon = item.icon; const selected = item.id === active; return <button key={item.id} onClick={() => { setActive(item.id); setNotice(""); }} className={`w-full flex items-center gap-3 text-left px-3 py-3 rounded-lg mb-1 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#67d5c7] ${selected ? "bg-[#1f537d] text-white" : "text-[#afc4d7] hover:bg-[#173e60]"}`} aria-current={selected ? "page" : undefined}><NavIcon size={16} /><span className="text-[12px] font-semibold">{item.label}</span>{selected && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#67d5c7]" />}</button>; })}
+        <div className="mt-12 px-3"><div className="h-px bg-white/10 mb-4" /><p className="text-[10px] leading-5 text-[#87a4bc]">Select a group to see what’s available. No account data is shown here.</p></div>
+      </nav>
+      <section className="flex-1 p-10">
+        {notice && <div role="status" className="mb-5 flex items-center gap-2 text-[12px] text-[#16756f] bg-[#e0f2ef] border border-[#bce2dc] px-4 py-3 rounded-lg">{notice}<button aria-label="Dismiss notice" onClick={() => setNotice("")} className="ml-auto"><X size={14} /></button></div>}
+        <div className="max-w-[900px]">
+          <div className="flex items-start justify-between mb-8"><div><p className="text-[10px] uppercase tracking-[0.2em] text-[#3885bc] font-bold mb-3">{current.eyebrow}</p><h1 className="text-[30px] font-semibold tracking-[-0.05em]">{current.title}</h1><p className="text-[13px] text-[#71869a] mt-3 max-w-[520px] leading-6">{current.copy}</p></div><div className="rounded-xl bg-[#e2f2f0] text-[#17756e] p-3"><Icon size={20} /></div></div>
+          <div className="flex gap-8 items-start">
+            <div className="w-[340px] rounded-2xl bg-[#e9f1f7] border border-[#d6e3ed] p-6 shrink-0"><Shield size={19} className="text-[#1674c5] mb-5" /><h2 className="font-bold text-[14px]">A quieter starting point</h2><p className="text-[12px] text-[#6d8498] leading-5 mt-2">Your workspace is ready for its first action. Explore a service when you have something to do.</p><div className="mt-7 border-t border-[#d4e1ea] pt-4 flex gap-2 text-[11px] text-[#6b8297]"><CheckCircle2 size={15} className="text-[#299b93] shrink-0" /> Capabilities are available without customer data.</div></div>
+            <div className="flex-1 space-y-2">{current.items.map(([name, description, badge]) => <button key={name} onClick={() => setNotice(`${name} is ready to open when connected to your workspace.`)} className="w-full text-left bg-white border border-[#dce5ed] rounded-xl px-4 py-3.5 hover:border-[#82b4d6] hover:shadow-[0_6px_18px_rgba(25,65,105,.07)] transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1674c5]"><div className="flex items-center gap-2"><span className="text-[12px] font-bold">{name}</span>{badge && <span className="text-[9px] font-bold text-[#657c91] bg-[#edf2f6] rounded px-1.5 py-0.5">{badge}</span>}<ArrowRight size={14} className="ml-auto text-[#9aabba]" /></div><p className="text-[11px] text-[#8092a3] mt-1.5 leading-4">{description}</p></button>)}</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>;
+}

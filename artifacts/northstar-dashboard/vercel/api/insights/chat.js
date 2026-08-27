@@ -10,9 +10,12 @@ const {
   isSameOriginBrowserRequest,
   validateInsightRequest,
 } = require("../_lib/insights");
+const { requireSession, sameOrigin } = require("../_lib/auth");
 
 module.exports = async function handler(request, response) {
   if (rejectUnsupportedMethod(request, response, ["POST"])) return;
+  if (requireSession(request, response, json)) return;
+  if (!sameOrigin(request)) return json(response, 403, { error: "Request not allowed." });
 
   if (!isSameOriginBrowserRequest(request)) {
     json(response, 403, { error: "This chat request is not allowed." });

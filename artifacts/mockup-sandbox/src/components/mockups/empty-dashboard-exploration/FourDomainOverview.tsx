@@ -1,0 +1,33 @@
+import React, { useState } from "react";
+import { ArrowRight, FileCheck, FileText, Landmark, LayoutGrid, LockKeyhole, Search } from "lucide-react";
+
+const domains = [
+  { label: "Quick Access", eyebrow: "Orient", icon: LayoutGrid, tint: "#e8f3fb", ink: "#175f94", summary: "The places you return to most.", items: ["Home", "Accounts Information", "Administration", "Marketplace"] },
+  { label: "Payments & Transfers", eyebrow: "Move money", icon: Landmark, tint: "#eaf1f7", ink: "#244f72", summary: "Send and manage payments with control.", items: ["Account Transfer", "ACH Payments", "Electronic Funds Transfer (EFT)", "EFT Client Returns", "File Transfer Facility (FTF)", "Interac e-Transfer", "Wire Payment", "Zelle"] },
+  { label: "Cheques", eyebrow: "Process", icon: FileCheck, tint: "#edf3ee", ink: "#32634e", summary: "Capture, reconcile, and protect cheque activity.", items: ["Northstar DepositEdge", "Digital Cheque Service (DCS)", "Recon Management", "Stop Payments", "Cheque Imaging"] },
+  { label: "Reports", eyebrow: "Understand", icon: FileText, tint: "#f2f0f8", ink: "#5b547f", summary: "Find the records your team needs.", items: ["Account transfer reports", "Wire Payment reports", "Electronic Report Delivery (ERD)", "File Transfer Facility (FTF) reports", "Recon Management reports", "ACH reports", "Stop payments reports", "Digital Cheque Services reports"] },
+];
+
+export function FourDomainOverview() {
+  const [selected, setSelected] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const filtered = domains.map((domain) => ({ ...domain, items: domain.items.filter((item) => item.toLowerCase().includes(query.toLowerCase())) }));
+  return <main className="min-h-[100dvh] bg-[#f7f9fb] text-[#243b53]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <header className="flex h-[70px] items-center justify-between border-b border-[#dce4eb] bg-[#fdfefe] px-9">
+      <div className="flex items-center gap-3"><div className="grid h-9 w-9 place-items-center rounded-lg bg-[#155f9f] text-white"><Landmark className="h-5 w-5" /></div><span className="text-[20px] font-bold tracking-[-.04em]">Northstar</span><span className="ml-2 border-l border-[#dce4eb] pl-4 text-xs font-semibold text-[#8295a7]">Business banking</span></div>
+      <div className="flex items-center gap-4"><label className="flex w-[230px] items-center gap-2 rounded-lg border border-[#dce4eb] bg-white px-3 py-2 text-xs text-[#8498a9]"><Search className="h-4 w-4" /><span className="sr-only">Search all services</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search all services" className="w-full bg-transparent outline-none placeholder:text-[#9aacbb]" /></label><button aria-label="Account menu" className="grid h-8 w-8 place-items-center rounded-full bg-[#e4eef6] text-[10px] font-bold text-[#155f9f] focus:outline-none focus:ring-2 focus:ring-[#91c6e9]">NS</button></div>
+    </header>
+    <section className="mx-auto max-w-[1170px] px-9 pb-16 pt-12">
+      <div className="flex items-end justify-between border-b border-[#dce4eb] pb-8"><div><p className="mb-3 text-[11px] font-bold uppercase tracking-[.18em] text-[#6187a4]">Workspace map</p><h1 className="text-[36px] font-semibold tracking-[-.055em] text-[#203c58]">Everything in its place.</h1><p className="mt-3 text-sm text-[#73879a]">A clear path to every banking capability in Northstar.</p></div><div className="flex items-center gap-2 rounded-full bg-[#eef5fa] px-3 py-2 text-[11px] font-semibold text-[#62809a]"><LockKeyhole className="h-3.5 w-3.5" /> Secure workspace</div></div>
+      <div className="mt-8 grid grid-cols-2 gap-5">
+        {filtered.map((domain, index) => { const Icon = domain.icon; const isSelected = selected === domain.label; return <article key={domain.label} className={`relative overflow-hidden rounded-2xl border bg-white transition duration-200 ${isSelected ? "border-[#6ea9d3] shadow-[0_12px_30px_rgba(33,82,120,.1)]" : "border-[#dce4eb] shadow-[0_3px_12px_rgba(33,59,81,.035)] hover:-translate-y-0.5 hover:border-[#a5c7df]"}`}>
+          <div className="flex items-start gap-4 border-b border-[#e7edf2] px-6 py-5"><div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl" style={{ background: domain.tint, color: domain.ink }}><Icon className="h-5 w-5" /></div><div className="flex-1"><p className="text-[10px] font-bold uppercase tracking-[.16em]" style={{ color: domain.ink }}>{String(index + 1).padStart(2, "0")} / {domain.eyebrow}</p><h2 className="mt-1 text-[18px] font-bold tracking-[-.03em] text-[#294661]">{domain.label}</h2><p className="mt-1 text-xs text-[#7890a2]">{domain.summary}</p></div><span className="rounded-full bg-[#f2f5f7] px-2 py-1 text-[10px] font-bold text-[#7890a2]">{domain.items.length}</span></div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 px-6 py-4">{domain.items.map((item) => <button key={item} onClick={() => setSelected(domain.label)} className="group flex min-h-[33px] items-center gap-2 rounded-md text-left text-[11px] font-semibold text-[#557089] transition hover:text-[#155f9f] focus:outline-none focus:ring-2 focus:ring-[#91c6e9]">{item}{(item === "Interac e-Transfer" || item === "Zelle" || item === "Recon Management") && <span className="rounded bg-[#f0f3f5] px-1 py-0.5 text-[8px] font-extrabold tracking-wider text-[#8496a5]">{item === "Zelle" || item === "Recon Management" ? "US" : "CA"}</span>}<ArrowRight className="ml-auto h-3 w-3 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100" /></button>)}</div>
+          {domain.items.length === 0 && <p className="px-6 pb-5 text-xs text-[#899dac]">No matching services in this domain.</p>}
+          <button onClick={() => setSelected(isSelected ? null : domain.label)} aria-expanded={isSelected} className="flex w-full items-center justify-between border-t border-[#edf1f4] px-6 py-3 text-[11px] font-bold text-[#5f809b] transition hover:bg-[#f7fafc] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#91c6e9]"><span>{isSelected ? "Domain selected" : "View domain"}</span><ArrowRight className={`h-3.5 w-3.5 transition-transform ${isSelected ? "rotate-90" : ""}`} /></button>
+        </article>; })}
+      </div>
+      <footer className="mt-9 flex items-center justify-between border-t border-[#dce4eb] pt-5 text-[11px] text-[#8295a7]"><span>Choose a capability to begin. No account data is shown here.</span><button className="font-bold text-[#155f9f] hover:underline focus:outline-none focus:ring-2 focus:ring-[#91c6e9]">Visit Support Center <span aria-hidden="true">→</span></button></footer>
+    </section>
+  </main>;
+}

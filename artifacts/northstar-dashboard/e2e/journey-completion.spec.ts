@@ -182,7 +182,7 @@ test("incomplete session records are normalized before the dashboard renders", a
     );
   });
 
-  await page.goto("/");
+  await openDashboard(page);
   await expect(
     page.getByRole("heading", { name: "Welcome James!" }),
   ).toBeVisible();
@@ -228,7 +228,7 @@ test("support chat and article feedback end with honest acknowledgements", async
   await expect(support).toContainText("Thank you for your feedback.");
 });
 
-test("sign out clears the tab session and offers a successful restart", async ({
+test("sign out clears the tab session and returns to protected access", async ({
   page,
 }) => {
   await openDashboard(page);
@@ -247,14 +247,22 @@ test("sign out clears the tab session and offers a successful restart", async ({
   await confirmation.getByRole("button", { name: "Sign Out" }).click();
 
   await expect(
-    page.getByRole("heading", { name: "You’re signed out" }),
+    page.getByRole("heading", {
+      name: "A clearer view of what moves your business.",
+    }),
   ).toBeVisible();
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "You’re signed out" }),
+    page.getByRole("heading", {
+      name: "A clearer view of what moves your business.",
+    }),
   ).toBeVisible();
 
-  await page.getByRole("button", { name: "Start a new demo session" }).click();
+  await page.getByLabel("Username").fill(crypto.randomUUID());
+  await page
+    .getByTestId("input-login-password")
+    .fill(crypto.randomUUID());
+  await page.getByRole("button", { name: "Sign in to preview" }).click();
   await expect(page.getByRole("heading", { name: "Welcome Ben!" })).toBeVisible();
   await expect(
     page

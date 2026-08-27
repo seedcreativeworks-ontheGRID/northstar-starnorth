@@ -12,6 +12,7 @@ import {
   type ApprovalUpdateStatus,
   type Transaction,
 } from "@workspace/api-client-react";
+import { authenticatedFetch, broadcastAuthInvalidation } from "./auth-events";
 
 export type { Approval, Transaction };
 
@@ -151,6 +152,8 @@ const INITIAL_APPROVALS: Approval[] = [
 type AppState = {
   activeUser: DashboardUser;
   setActiveUser: (user: DashboardUser) => void;
+  isProfileLocked: boolean;
+  applyAuthenticatedProfile: (user: DashboardUser, resetDemo?: boolean, locked?: boolean) => void;
   transactions: Transaction[];
   approvals: Approval[];
   submitTransfer: (amount: number) => Promise<Transaction>;
@@ -177,7 +180,7 @@ type AppState = {
   completedInsightActions: string[];
   completeInsightActions: (actions: string[]) => void;
   isSignedOut: boolean;
-  signOut: () => void;
+  signOut: () => Promise<void>;
   restartDemo: () => void;
   demoDisclosure: DemoDisclosure | null;
   showDemoDisclosure: (disclosure: DemoDisclosure) => void;
@@ -303,6 +306,7 @@ const AppContext = createContext<AppState | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<DashboardSession>(loadSession);
+  const [isProfileLocked, setProfileLocked] = useState(false);
   const [isPersistedDataLoading, setIsPersistedDataLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAccountFilter, setSelectedAccountFilter] = useState(
@@ -336,11 +340,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const setActiveUser = useCallback((user: DashboardUser) => {
+    if (isProfileLocked) return;
     setSession((current) => ({ ...current, activeUser: user }));
     setSearchQuery("");
     setSelectedAccountFilter("Northstar Chequing Business #1");
     setTransferModalOpen(false);
-  }, []);
+  }, [isProfileLocked]);
+
+  const applyAuthenticatedProfile = useCallback(
+    (user: DashboardUser, resetDemo = false, locked = true) => {
+      setSession((current) => resetDemo
+        ? { ...createSession(), activeUser: user }
+        : { ...current, activeUser: user, isSignedOut: false });
+      setProfileLocked(locked);
+      setSearchQuery("");
+      setSelectedAccountFilter("Northstar Chequing Business #1");
+      setTransferModalOpen(false);
+      setDemoDisclosure(null);
+    },
+    [],
+  );
 
   const loadPersistedData = useCallback(async () => {
     setIsPersistedDataLoading(true);
@@ -438,7 +457,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ),
     }));
 
-  const signOut = () => {
+  const signOut = async () => {
+    const response = await authenticatedFetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "same-origin",
+    });
+    if (!response.ok) {
+      throw new Error("Unable to sign out. Please try again.");
+    }
     const signedOutSession = {
       ...createSession(),
       activeUser,
@@ -448,10 +474,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSearchQuery("");
     setTransferModalOpen(false);
     setDemoDisclosure(null);
+    setProfileLocked(false);
+    broadcastAuthInvalidation();
   };
 
   const restartDemo = () => {
-    setSession(createSession());
+    setSession((current) => ({ ...createSession(), activeUser: current.activeUser }));
     setSearchQuery("");
     setSelectedAccountFilter("Northstar Chequing Business #1");
     setDemoDisclosure(null);
@@ -462,6 +490,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       value={{
         activeUser,
         setActiveUser,
+        isProfileLocked,
+        applyAuthenticatedProfile,
         transactions,
         approvals,
         submitTransfer,

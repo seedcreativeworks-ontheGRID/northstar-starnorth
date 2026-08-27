@@ -63,7 +63,7 @@ const NOTIFICATIONS = [
 // TopBar
 // ---------------------------------------------------------------------------
 export function TopBar() {
-  const { activeUser, setActiveUser, signOut, showDemoDisclosure } =
+  const { activeUser, setActiveUser, isProfileLocked, signOut, showDemoDisclosure } =
     useAppStore();
   const { toast } = useToast();
   const [signOutOpen, setSignOutOpen] = useState(false);
@@ -77,9 +77,17 @@ export function TopBar() {
     });
   };
 
-  const handleSignOut = () => {
-    signOut();
-    setSignOutOpen(false);
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      setSignOutOpen(false);
+    } catch {
+      toast({
+        title: "Unable to sign out",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -107,11 +115,14 @@ export function TopBar() {
           {/* User switcher */}
           <div
             className="flex items-center gap-1.5"
-            role="group"
-            aria-label="Switch dashboard user"
+            {...(!isProfileLocked ? { role: "group", "aria-label": "Switch dashboard user" } : {})}
           >
             <User className="h-3.5 w-3.5" />
-            {(["james", "ben"] as const).map((user) => {
+            {isProfileLocked ? (
+              <span className="font-semibold text-foreground" data-testid="text-active-user">
+                {DASHBOARD_USERS[activeUser].name}
+              </span>
+            ) : (["james", "ben"] as const).map((user) => {
               const isActive = activeUser === user;
               return (
                 <button
@@ -161,7 +172,7 @@ export function TopBar() {
             </AlertDialogCancel>
             <AlertDialogAction
               data-testid="button-sign-out-confirm"
-              onClick={handleSignOut}
+              onClick={() => void handleSignOut()}
             >
               Sign Out
             </AlertDialogAction>
@@ -996,14 +1007,14 @@ export function Navbar({
                 setIsCompactNavigationOpen(false);
                 onSupportOpenChange(!isSupportOpen);
               }}
-              className={`group flex h-8 items-center gap-1.5 rounded-[5px] px-1.5 text-primary transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-2 ${
+              className={`grid h-8 w-8 place-items-center rounded-[5px] text-primary transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                 isSupportOpen
                   ? "bg-background shadow-sm"
                   : "hover:bg-primary/[0.075]"
               }`}
             >
               <span
-                className={`grid h-5 w-5 shrink-0 place-items-center rounded-[5px] transition-colors ${
+                className={`grid h-6 w-6 place-items-center rounded-[5px] transition-colors ${
                   isSupportOpen
                     ? "bg-primary text-primary-foreground"
                     : "bg-primary/10 text-primary"
@@ -1011,21 +1022,6 @@ export function Navbar({
               >
                 <LifeBuoy className="h-3.5 w-3.5" strokeWidth={2.25} />
               </span>
-              <span className="hidden whitespace-nowrap text-[10px] font-semibold sm:block">
-                <span className="min-[1536px]:hidden">Help &amp; Support</span>
-                <span className="hidden min-[1536px]:inline min-[1720px]:hidden">
-                  Help
-                </span>
-                <span className="hidden min-[1720px]:inline">
-                  Help &amp; Support
-                </span>
-              </span>
-              <ChevronRight
-                className={`hidden h-3.5 w-3.5 shrink-0 transition-transform sm:block ${
-                  isSupportOpen ? "rotate-90" : "group-hover:translate-x-0.5"
-                }`}
-                strokeWidth={2}
-              />
             </button>
 
             <span aria-hidden="true" className="mx-0.5 h-5 w-px bg-primary/20" />

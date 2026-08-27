@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+.contextual-help-current {
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 213 100% 42%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --card-border: 214 32% 91%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --popover-border: 214 32% 91%;
+  --primary: 213 100% 42%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222 47% 11%;
+  --destructive: 2 87% 48%;
+  --destructive-foreground: 0 0% 100%;
+  --radius: 0.375rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: hsl(var(--foreground));
+}
+
+.contextual-help-current,
+.contextual-help-current * {
+  box-sizing: border-box;
+}
+
+.contextual-help-current button {
+  font-family: inherit;
+}
