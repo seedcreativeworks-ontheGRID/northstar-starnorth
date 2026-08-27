@@ -7,7 +7,6 @@ import {
   User,
   LogOut,
   Landmark,
-  LifeBuoy,
   Menu,
   ChevronRight,
   CheckCheck,
@@ -16,6 +15,7 @@ import {
   FileText,
 } from "lucide-react";
 
+import { GuidedAdvisorIcon } from "@/components/icons/GuidedAdvisorIcon";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -1020,7 +1020,7 @@ export function Navbar({
                     : "bg-primary/10 text-primary"
                 }`}
               >
-                <LifeBuoy className="h-3.5 w-3.5" strokeWidth={2.25} />
+                <GuidedAdvisorIcon className="h-4 w-4" />
               </span>
             </button>
 
