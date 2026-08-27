@@ -8,3 +8,4 @@
 - [Rail menu semantics](rail-menu-semantics.md) — Header rail menu is a tablist that resets to Quick Access on open; scrollable containers are Tab-focusable in Chrome, so keep tabIndex -1 on the rail.
 - [Testing Vercel CommonJS handlers](testing-vercel-commonjs-handlers.md) — Test exact handlers from a temporary CommonJS scope; the dashboard package is ESM while Vercel functions use CommonJS.
 - [Guided persona session boundary](guided-persona-session-boundary.md) — Ben/James selection is a presentation lock in stateless demo sessions, not an authorization role.
+- [GitHub connector versus Git CLI](github-connector-git-cli.md) — Connector OAuth may support API writes while the repository's HTTPS Git credential remains invalid.
