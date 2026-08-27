@@ -1,6 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import {
-  LifeBuoy,
   X,
   Search,
   ChevronRight,
@@ -17,6 +16,7 @@ import {
   Check,
   Info,
 } from "lucide-react";
+import { GuidedAdvisorIcon } from "@/components/icons/GuidedAdvisorIcon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -318,7 +318,7 @@ export function SupportPanel({ open, onOpenChange }: { open: boolean; onOpenChan
         {/* Header */}
         <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-border/60 bg-white/95 px-5 py-4 backdrop-blur">
            <div className="flex min-w-0 items-center gap-2">
-             <LifeBuoy className="h-4 w-4 shrink-0 text-primary" />
+             <GuidedAdvisorIcon className="h-4 w-4 shrink-0 text-primary" />
              <h2 className="min-w-0 break-words text-sm font-semibold text-foreground">Help & Support</h2>
           </div>
           <button
@@ -539,7 +539,7 @@ export function SupportPanel({ open, onOpenChange }: { open: boolean; onOpenChan
 
                 <div className="mb-2 flex flex-col items-center justify-center pt-2">
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <LifeBuoy className="h-6 w-6" />
+                    <GuidedAdvisorIcon className="h-6 w-6" />
                   </div>
                   <h3 className="text-[14px] font-medium text-foreground">Northstar Support</h3>
                   <p className="mt-1 max-w-[250px] text-center text-[12px] text-muted-foreground">
@@ -551,7 +551,7 @@ export function SupportPanel({ open, onOpenChange }: { open: boolean; onOpenChan
                   <div key={msg.id} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
                     {msg.sender === "agent" && (
                       <div className="mr-2 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-white">
-                        <LifeBuoy className="h-3.5 w-3.5" />
+                        <GuidedAdvisorIcon className="h-3.5 w-3.5" />
                       </div>
                     )}
                      <div
@@ -569,7 +569,7 @@ export function SupportPanel({ open, onOpenChange }: { open: boolean; onOpenChan
                 {isAgentTyping && (
                   <div className="flex justify-start" role="status" aria-live="polite">
                     <div className="mr-2 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-white">
-                      <LifeBuoy className="h-3.5 w-3.5" />
+                      <GuidedAdvisorIcon className="h-3.5 w-3.5" />
                     </div>
                     <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-sm border border-border/60 bg-white px-4 py-2.5 shadow-sm">
                       <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:0ms]" />
