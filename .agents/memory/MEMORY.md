@@ -4,7 +4,7 @@
 - [Concurrent dashboard panels](concurrent-dashboard-panels.md) — On desktop, Insights and Help open side by side and push the dashboard left; they never form one vertical drawer.
 - [Playwright Chromium on Nix](playwright-chromium-nix.md) — Chromium needs explicit libgbm on this Nix image; mesa alone does not provide the required shared library.
 - [Vercel AI production fallback](vercel-ai-production-fallback.md) — Keep grounded live chat replies when AI Gateway rejects OIDC for an unverified billing account.
-- [Vercel manual deploy recipe](vercel-manual-deploy.md) — Site isn't auto-updated; rebuild and inline-file POST to /v13/deployments, reading files via fs in an impure block.
+- [Vercel Git deployment contract](vercel-manual-deploy.md) — Build only the dashboard; serverless handlers must be committed under root api/ before Vercel starts.
 - [Rail menu semantics](rail-menu-semantics.md) — Header rail menu is a tablist that resets to Quick Access on open; scrollable containers are Tab-focusable in Chrome, so keep tabIndex -1 on the rail.
 - [Testing Vercel CommonJS handlers](testing-vercel-commonjs-handlers.md) — Test exact handlers from a temporary CommonJS scope; the dashboard package is ESM while Vercel functions use CommonJS.
 - [Guided persona session boundary](guided-persona-session-boundary.md) — Ben/James selection is a presentation lock in stateless demo sessions, not an authorization role.
