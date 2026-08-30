@@ -210,6 +210,27 @@ test("guided login selects James, restores him on refresh, and resets on logout"
   await expect(page.getByRole("heading", { name: "What is your primary role?" })).toBeVisible();
 });
 
+test("questionnaire can exit safely to the login landing page", async ({ page }) => {
+  const auth: AuthMocks = {
+    authenticated: true,
+    flow: "guided",
+    profile: null,
+  };
+  await mockAuthentication(page, auth);
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { name: "What is your primary role?" })).toBeVisible();
+  await page.getByRole("button", { name: "Exit to login" }).click();
+
+  await expect(
+    page.getByRole("heading", {
+      name: "A clearer view of what moves your business.",
+    }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Username")).toBeFocused();
+  expect(auth.authenticated).toBe(false);
+});
+
 test("signing out immediately protects every open tab", async ({
   page,
   context,
