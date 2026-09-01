@@ -1,5 +1,7 @@
 const crypto = require("crypto");
 const { sameOrigin } = require("./origin-policy.cjs");
+const { findUserByUsername } = require("./db");
+const { verifyPassword } = require("./password");
 
 const COOKIE_NAME = "northstar_demo_session";
 const TTL_SECONDS = 60 * 60;
@@ -72,7 +74,7 @@ function clientKey(request) {
   return (request.headers["x-forwarded-for"] || request.socket?.remoteAddress || "unknown").split(",")[0].trim();
 }
 
-function login(request, response, json, body) {
+async function login(request, response, json, body) {
   const now = Date.now();
   const key = clientKey(request);
   const current = failures.get(key);
@@ -81,26 +83,23 @@ function login(request, response, json, body) {
     return;
   }
   const { username, password } = body || {};
-  const expectedUsername = process.env.NORTHSTAR_DEMO_USERNAME;
-  const expectedPassword = process.env.NORTHSTAR_DEMO_PASSWORD;
-  const guidedUsername = process.env.NORTHSTAR_GUIDED_USERNAME;
-  const guidedPassword = process.env.NORTHSTAR_GUIDED_PASSWORD;
-  const digest = (value) => crypto.createHash("sha256").update(value).digest();
   const validInput = typeof username === "string" && typeof password === "string" && username.length > 0 && password.length > 0 && username.length <= MAX_CREDENTIAL_LENGTH && password.length <= MAX_CREDENTIAL_LENGTH;
-  const directMatch = Boolean(process.env.SESSION_SECRET && expectedUsername && expectedPassword && validInput) &&
-    crypto.timingSafeEqual(digest(username), digest(expectedUsername)) &&
-    crypto.timingSafeEqual(digest(password), digest(expectedPassword));
-  const guidedMatch = Boolean(process.env.SESSION_SECRET && guidedUsername && guidedPassword && validInput) &&
-    crypto.timingSafeEqual(digest(username), digest(guidedUsername)) &&
-    crypto.timingSafeEqual(digest(password), digest(guidedPassword));
-  if (!directMatch && !guidedMatch) {
+  const reject = () => {
     failures.set(key, { count: current?.resetAt > now ? current.count + 1 : 1, resetAt: now + WINDOW_MS });
     json(response, 401, { error: "Unable to sign in with those details." });
+  };
+  if (!process.env.SESSION_SECRET || !validInput) {
+    reject();
+    return;
+  }
+  const user = await findUserByUsername(username);
+  const passwordMatches = await verifyPassword(user?.password_hash, password);
+  if (!user || !passwordMatches) {
+    reject();
     return;
   }
   failures.delete(key);
-  const flow = directMatch ? "direct" : "guided";
-  const profile = directMatch ? "ben" : null;
+  const { flow, profile } = user;
   setSessionCookie(response, { flow, profile, exp: Math.floor(now / 1000) + TTL_SECONDS });
   json(response, 200, { authenticated: true, flow, profile, questionnaireRequired: flow === "guided" });
 }
