@@ -24,6 +24,15 @@ order:
    those env vars are no longer read at login time and can be removed from the Vercel project after seeding
    if desired).
 
+Login rate-limiting is now backed by Upstash Redis (`api/_lib/rate-limit.js`, `@upstash/redis`) instead of
+an in-memory `Map` -- the old approach reset on every cold start and didn't share state across concurrent
+function instances. Set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` on the Vercel project (free
+tier); without them, `rate-limit.js` falls back to the same weak in-memory behavior automatically, so
+nothing breaks if this is skipped -- it's a hardening step, not a hard requirement like `DATABASE_URL`.
+This session's sandbox network blocks both `neon.tech` and `upstash.io` outright (org policy denial, not a
+timeout), so the Redis path was validated by mocking `@upstash/redis`'s real HTTP pipeline calls rather than
+against a live instance -- worth a real smoke test (5 wrong-password attempts, expect a 429) once deployed.
+
 **How to apply:** Keep `api/_lib/db.js` and `artifacts/northstar-dashboard/vercel/api/_lib/db.js` (and
 `password.js`) byte-identical -- `artifacts/api-server/test/vercel-api-sync.integration.mjs` enforces this.
 `artifacts/api-server/test/vercel-auth.integration.mjs` now requires a real reachable `DATABASE_URL` to run

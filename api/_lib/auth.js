@@ -2,13 +2,11 @@ const crypto = require("crypto");
 const { sameOrigin } = require("./origin-policy.cjs");
 const { findUserByUsername } = require("./db");
 const { verifyPassword } = require("./password");
+const { isThrottled, retryAfterSeconds, recordFailure, clearFailures } = require("./rate-limit");
 
 const COOKIE_NAME = "northstar_demo_session";
 const TTL_SECONDS = 60 * 60;
 const MAX_CREDENTIAL_LENGTH = 128;
-const MAX_FAILURES = 5;
-const WINDOW_MS = 15 * 60 * 1000;
-const failures = new Map();
 
 function parseCookies(request) {
   return Object.fromEntries(
@@ -77,28 +75,28 @@ function clientKey(request) {
 async function login(request, response, json, body) {
   const now = Date.now();
   const key = clientKey(request);
-  const current = failures.get(key);
-  if (current && current.resetAt > now && current.count >= MAX_FAILURES) {
-    json(response, 429, { error: "Unable to sign in. Please try again later." }, { "Retry-After": String(Math.ceil((current.resetAt - now) / 1000)) });
+  if (await isThrottled(key)) {
+    const retryAfter = await retryAfterSeconds(key);
+    json(response, 429, { error: "Unable to sign in. Please try again later." }, { "Retry-After": String(retryAfter) });
     return;
   }
   const { username, password } = body || {};
   const validInput = typeof username === "string" && typeof password === "string" && username.length > 0 && password.length > 0 && username.length <= MAX_CREDENTIAL_LENGTH && password.length <= MAX_CREDENTIAL_LENGTH;
-  const reject = () => {
-    failures.set(key, { count: current?.resetAt > now ? current.count + 1 : 1, resetAt: now + WINDOW_MS });
+  const reject = async () => {
+    await recordFailure(key);
     json(response, 401, { error: "Unable to sign in with those details." });
   };
   if (!process.env.SESSION_SECRET || !validInput) {
-    reject();
+    await reject();
     return;
   }
   const user = await findUserByUsername(username);
   const passwordMatches = await verifyPassword(user?.password_hash, password);
   if (!user || !passwordMatches) {
-    reject();
+    await reject();
     return;
   }
-  failures.delete(key);
+  await clearFailures(key);
   const { flow, profile } = user;
   setSessionCookie(response, { flow, profile, exp: Math.floor(now / 1000) + TTL_SECONDS });
   json(response, 200, { authenticated: true, flow, profile, questionnaireRequired: flow === "guided" });
