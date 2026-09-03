@@ -19,6 +19,7 @@ const guidedUsername = `guided-user-${crypto.randomUUID()}`;
 const guidedPassword = `guided-password-${crypto.randomUUID()}`;
 const sessionSecret = crypto.randomBytes(32).toString("hex");
 const origin = "https://northstar-business-dashboard.vercel.app";
+const trustedCrossOrigin = "https://seedcreativeworks-onthegrid.github.io";
 const cookieName = "northstar_demo_session";
 
 process.env.SESSION_SECRET = sessionSecret;
@@ -345,4 +346,63 @@ test("unsafe Vercel handlers reject cross-origin requests with valid sessions", 
     }),
   );
   assert.equal(crossOrigin.statusCode, 403);
+});
+
+test("the trusted GitHub Pages origin gets CORS + a cross-site cookie; every other cross-origin caller still doesn't", async () => {
+  const preflight = await invoke(
+    handlers.login,
+    requestMock({
+      method: "OPTIONS",
+      headers: { origin: trustedCrossOrigin, "sec-fetch-site": "cross-site" },
+    }),
+  );
+  assert.equal(preflight.statusCode, 204);
+  assert.equal(preflight.headers.get("access-control-allow-origin"), trustedCrossOrigin);
+  assert.equal(preflight.headers.get("access-control-allow-credentials"), "true");
+
+  const login = await invoke(
+    handlers.login,
+    requestMock({
+      method: "POST",
+      headers: { origin: trustedCrossOrigin, "sec-fetch-site": "cross-site" },
+      body: { username, password },
+    }),
+  );
+  assert.equal(login.statusCode, 200);
+  assert.equal(login.headers.get("access-control-allow-origin"), trustedCrossOrigin);
+  const setCookie = login.headers.get("set-cookie");
+  assert.match(setCookie, /SameSite=None/);
+  assert.match(setCookie, /Secure/);
+  const cookie = setCookie.split(";")[0];
+
+  // The same session, read back cross-origin, still works and still
+  // carries CORS headers so the browser lets the page read the response.
+  const session = await invoke(
+    handlers.session,
+    requestMock({ headers: { cookie, origin: trustedCrossOrigin, "sec-fetch-site": "cross-site" } }),
+  );
+  assert.equal(session.body.authenticated, true);
+  assert.equal(session.headers.get("access-control-allow-origin"), trustedCrossOrigin);
+
+  // A same-origin follow-up request for the *same* logged-in user gets the
+  // stronger SameSite=Lax cookie, not the relaxed one -- the relaxation is
+  // per-request, not something that leaks into ordinary Vercel usage.
+  const sameOriginLogin = await invoke(
+    handlers.login,
+    requestMock({ method: "POST", headers: { origin }, body: { username, password } }),
+  );
+  assert.match(sameOriginLogin.headers.get("set-cookie"), /SameSite=Lax/);
+
+  // An origin that isn't the allowlisted one is still rejected outright,
+  // and critically gets no CORS headers at all -- this isn't a wildcard.
+  const untrusted = await invoke(
+    handlers.login,
+    requestMock({
+      method: "POST",
+      headers: { origin: "https://random-attacker.example", "sec-fetch-site": "cross-site" },
+      body: { username, password },
+    }),
+  );
+  assert.equal(untrusted.statusCode, 403);
+  assert.equal(untrusted.headers.get("access-control-allow-origin"), undefined);
 });

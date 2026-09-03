@@ -360,6 +360,14 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
+  // Cookie-based sessions need credentials explicitly included once
+  // requests cross an origin (fetch defaults to "same-origin", which never
+  // sends cookies cross-site) -- only kicks in when a remote base URL is
+  // configured, so same-origin callers are unaffected.
+  if (_baseUrl && init.credentials === undefined) {
+    init.credentials = "include";
+  }
+
   const response = await fetch(input, { ...init, method, headers });
 
   if (!response.ok) {

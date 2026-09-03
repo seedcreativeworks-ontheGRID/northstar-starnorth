@@ -2,25 +2,23 @@ const {
   json,
   readJsonBody,
   rejectUnsupportedMethod,
+  applyCors,
+  handlePreflight,
 } = require("../_lib/http");
 const {
   consumeRateLimit,
   generateFallbackReply,
   generateInsightReply,
-  isSameOriginBrowserRequest,
   validateInsightRequest,
 } = require("../_lib/insights");
-const { requireSession, sameOrigin } = require("../_lib/auth");
+const { requireSession, isAllowedOrigin } = require("../_lib/auth");
 
 module.exports = async function handler(request, response) {
+  if (handlePreflight(request, response)) return;
+  applyCors(request, response);
   if (rejectUnsupportedMethod(request, response, ["POST"])) return;
   if (requireSession(request, response, json)) return;
-  if (!sameOrigin(request)) return json(response, 403, { error: "Request not allowed." });
-
-  if (!isSameOriginBrowserRequest(request)) {
-    json(response, 403, { error: "This chat request is not allowed." });
-    return;
-  }
+  if (!isAllowedOrigin(request)) return json(response, 403, { error: "Request not allowed." });
 
   const rateLimit = consumeRateLimit(request);
   if (!rateLimit.allowed) {

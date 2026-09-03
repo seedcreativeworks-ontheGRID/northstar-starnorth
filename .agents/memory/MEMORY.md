@@ -10,3 +10,4 @@
 - [Guided persona session boundary](guided-persona-session-boundary.md) — Ben/James selection is a presentation lock in stateless demo sessions, not an authorization role.
 - [GitHub connector versus Git CLI](github-connector-git-cli.md) — Connector OAuth may support API writes while the repository's HTTPS Git credential remains invalid.
 - [Vercel database-backed login](vercel-database-backed-login.md) — Login now checks a real `users` table (argon2id) instead of comparing env-var credentials directly; requires `DATABASE_URL` + a push + a seed before merging to `main` or live login breaks.
+- [GitHub Pages cross-origin login](github-pages-cross-origin-login.md) — The github.io mirror calls the Vercel API cross-origin via an explicit origin allowlist; the session cookie's SameSite is chosen per-request so the primary site's CSRF posture is unaffected. Third-party-cookie blocking in some browsers is a known limitation that can't be fixed from here.

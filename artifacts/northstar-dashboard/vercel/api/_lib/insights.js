@@ -42,21 +42,6 @@ function getClientKey(request) {
   );
 }
 
-function isSameOriginBrowserRequest(request) {
-  if (request.headers["sec-fetch-site"] === "cross-site") return false;
-
-  const origin = request.headers.origin;
-  if (!origin) return true;
-
-  try {
-    const requestHost =
-      request.headers["x-forwarded-host"] || request.headers.host;
-    return Boolean(requestHost) && new URL(origin).host === requestHost;
-  } catch {
-    return false;
-  }
-}
-
 function consumeRateLimit(request) {
   const key = getClientKey(request);
   const now = Date.now();
@@ -265,6 +250,5 @@ module.exports = {
   consumeRateLimit,
   generateFallbackReply,
   generateInsightReply,
-  isSameOriginBrowserRequest,
   validateInsightRequest,
 };

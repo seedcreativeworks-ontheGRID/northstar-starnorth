@@ -30,4 +30,31 @@ function sameOrigin(request) {
   }
 }
 
-module.exports = { sameOrigin };
+// The GitHub Pages mirror of the dashboard calls this API cross-origin.
+// Everything else must stay same-origin -- this is an explicit allowlist,
+// not a general CORS opt-in.
+const TRUSTED_CROSS_ORIGINS = new Set([
+  "https://seedcreativeworks-onthegrid.github.io",
+]);
+
+function isTrustedCrossOrigin(request) {
+  if (request.headers["sec-fetch-site"] !== "cross-site") return false;
+  const origin = request.headers.origin;
+  return Boolean(origin && TRUSTED_CROSS_ORIGINS.has(origin));
+}
+
+function isAllowedOrigin(request) {
+  return sameOrigin(request) || isTrustedCrossOrigin(request);
+}
+
+function corsHeaders(request) {
+  const origin = request.headers.origin;
+  if (!origin || !TRUSTED_CROSS_ORIGINS.has(origin)) return {};
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Credentials": "true",
+    Vary: "Origin",
+  };
+}
+
+module.exports = { sameOrigin, isTrustedCrossOrigin, isAllowedOrigin, corsHeaders };

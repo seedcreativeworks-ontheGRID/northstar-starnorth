@@ -1,7 +1,9 @@
-const { json, rejectUnsupportedMethod } = require("../_lib/http");
+const { json, rejectUnsupportedMethod, applyCors, handlePreflight } = require("../_lib/http");
 const { getSession } = require("../_lib/auth");
 
 module.exports = function handler(request, response) {
+  if (handlePreflight(request, response)) return;
+  applyCors(request, response);
   if (rejectUnsupportedMethod(request, response, ["GET"])) return;
   const session = getSession(request);
   if (!session) return json(response, 200, { authenticated: false });

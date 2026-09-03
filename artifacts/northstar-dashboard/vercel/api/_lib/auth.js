@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const { sameOrigin } = require("./origin-policy.cjs");
+const { sameOrigin, isTrustedCrossOrigin, isAllowedOrigin } = require("./origin-policy.cjs");
 const { findUserByUsername } = require("./db");
 const { verifyPassword } = require("./password");
 const { isThrottled, retryAfterSeconds, recordFailure, clearFailures } = require("./rate-limit");
@@ -54,18 +54,32 @@ function requireSession(request, response, json) {
   return true;
 }
 
-function cookie(value, maxAge) {
-  return `${COOKIE_NAME}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}; Secure`;
+function cookie(value, maxAge, sameSite) {
+  return `${COOKIE_NAME}=${value}; Path=/; HttpOnly; SameSite=${sameSite}; Max-Age=${maxAge}; Secure`;
 }
 
-function setSessionCookie(response, session) {
+// SameSite=None is only used for the one trusted cross-origin caller (the
+// GitHub Pages mirror) -- every same-origin request (the real Vercel site)
+// keeps the stronger SameSite=Lax, unaffected by that carve-out.
+function sameSiteFor(request) {
+  return isTrustedCrossOrigin(request) ? "None" : "Lax";
+}
+
+function setSessionCookie(response, session, request) {
   const payload = Buffer.from(JSON.stringify({
     v: 2,
     exp: session.exp,
     flow: session.flow,
     profile: session.profile,
   })).toString("base64url");
-  response.setHeader("Set-Cookie", cookie(`${payload}.${sign(payload).toString("hex")}`, Math.max(0, session.exp - Math.floor(Date.now() / 1000))));
+  response.setHeader(
+    "Set-Cookie",
+    cookie(
+      `${payload}.${sign(payload).toString("hex")}`,
+      Math.max(0, session.exp - Math.floor(Date.now() / 1000)),
+      sameSiteFor(request),
+    ),
+  );
 }
 
 function clientKey(request) {
@@ -98,7 +112,7 @@ async function login(request, response, json, body) {
   }
   await clearFailures(key);
   const { flow, profile } = user;
-  setSessionCookie(response, { flow, profile, exp: Math.floor(now / 1000) + TTL_SECONDS });
+  setSessionCookie(response, { flow, profile, exp: Math.floor(now / 1000) + TTL_SECONDS }, request);
   json(response, 200, { authenticated: true, flow, profile, questionnaireRequired: flow === "guided" });
 }
 
@@ -125,13 +139,22 @@ function completeProfile(request, response, json, body) {
     score += weights[answer];
   }
   const profile = score >= 5 ? "james" : "ben";
-  setSessionCookie(response, { ...session, profile });
+  setSessionCookie(response, { ...session, profile }, request);
   return json(response, 200, { authenticated: true, profile, questionnaireRequired: false });
 }
 
-function logout(response, json) {
-  response.setHeader("Set-Cookie", cookie("", 0));
+function logout(request, response, json) {
+  response.setHeader("Set-Cookie", cookie("", 0, sameSiteFor(request)));
   json(response, 200, { authenticated: false });
 }
 
-module.exports = { completeProfile, getSession, isAuthenticated, requireSession, sameOrigin, login, logout };
+module.exports = {
+  completeProfile,
+  getSession,
+  isAuthenticated,
+  requireSession,
+  sameOrigin,
+  isAllowedOrigin,
+  login,
+  logout,
+};
