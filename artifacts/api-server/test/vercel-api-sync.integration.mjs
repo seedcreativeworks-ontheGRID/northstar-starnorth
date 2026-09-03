@@ -13,6 +13,7 @@ const sourceApi = path.join(
   workspaceRoot,
   "artifacts/northstar-dashboard/vercel/api",
 );
+const rootManifest = path.join(workspaceRoot, "package.json");
 
 async function listFiles(root) {
   const entries = await readdir(root, { recursive: true, withFileTypes: true });
@@ -42,6 +43,19 @@ test("the deployed /api tree matches its tested source under artifacts/northstar
       deployed,
       source,
       `/api/${file} has drifted from its tested source at artifacts/northstar-dashboard/vercel/api/${file}`,
+    );
+  }
+});
+
+test("root Vercel functions declare every external runtime package they load", async () => {
+  const manifest = JSON.parse(await readFile(rootManifest, "utf8"));
+  const dependencies = manifest.dependencies ?? {};
+
+  for (const packageName of ["@upstash/redis", "hash-wasm", "pg"]) {
+    assert.equal(
+      typeof dependencies[packageName],
+      "string",
+      `Root Vercel functions load ${packageName}; declare it in root package.json so Vercel bundles it.`,
     );
   }
 });
