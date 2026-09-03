@@ -7,20 +7,16 @@ jobs:
   diagnose:
     runs-on: ubuntu-latest
     steps:
-      - name: Preflight OPTIONS from the trusted origin
+      - name: Fetch live GitHub Pages index.html and inspect the referenced JS bundle
         run: |
-          curl -sS -i -X OPTIONS "https://northstar-business-dashboard.vercel.app/api/auth/login" \
-            -H "Origin: https://seedcreativeworks-onthegrid.github.io" \
-            -H "Access-Control-Request-Method: POST" \
-            -H "Access-Control-Request-Headers: content-type"
-      - name: Cross-origin login POST with the current secret values
-        run: |
-          curl -sS -i -X POST "https://northstar-business-dashboard.vercel.app/api/auth/login" \
-            -H "Origin: https://seedcreativeworks-onthegrid.github.io" \
-            -H "Content-Type: application/json" \
-            -d "{\"username\":\"${NORTHSTAR_DEMO_USERNAME}\",\"password\":\"${NORTHSTAR_DEMO_PASSWORD}\"}"
-        env:
-          NORTHSTAR_DEMO_USERNAME: ${{ secrets.NORTHSTAR_DEMO_USERNAME }}
-          NORTHSTAR_DEMO_PASSWORD: ${{ secrets.NORTHSTAR_DEMO_PASSWORD }}
-      - name: Healthz sanity check
-        run: curl -sS -i "https://northstar-business-dashboard.vercel.app/api/healthz"
+          set -x
+          curl -sS "https://seedcreativeworks-onthegrid.github.io/northstar-starnorth/" -o index.html
+          echo "--- index.html asset references ---"
+          grep -o '/northstar-starnorth/assets/[^"]*' index.html
+          JS_PATH=$(grep -o '/northstar-starnorth/assets/index-[^"]*\.js' index.html | head -1)
+          echo "JS bundle path: $JS_PATH"
+          curl -sS "https://seedcreativeworks-onthegrid.github.io${JS_PATH}" -o bundle.js
+          echo "--- does the live bundle contain the Vercel API base URL? ---"
+          grep -c "northstar-business-dashboard.vercel.app" bundle.js || echo "NOT FOUND"
+          echo "--- last-modified / cache headers on the live index.html ---"
+          curl -sS -I "https://seedcreativeworks-onthegrid.github.io/northstar-starnorth/"
