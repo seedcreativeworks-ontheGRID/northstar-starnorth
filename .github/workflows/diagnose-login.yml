@@ -1,0 +1,26 @@
+name: Diagnose login (temporary)
+
+on:
+  workflow_dispatch:
+    inputs:
+      username:
+        description: 'Username to test'
+        required: true
+      password:
+        description: 'Password to test'
+        required: true
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cross-origin login (exactly what the GitHub Pages mirror sends)
+        run: |
+          curl -sS -i -X POST "https://northstar-business-dashboard.vercel.app/api/auth/login" \
+            -H "Origin: https://seedcreativeworks-onthegrid.github.io" \
+            -H "Content-Type: application/json" \
+            -H "Sec-Fetch-Site: cross-site" \
+            -d "{\"username\":\"${LOGIN_USERNAME}\",\"password\":\"${LOGIN_PASSWORD}\"}"
+        env:
+          LOGIN_USERNAME: ${{ inputs.username }}
+          LOGIN_PASSWORD: ${{ inputs.password }}
