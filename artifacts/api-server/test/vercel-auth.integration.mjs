@@ -17,12 +17,20 @@ const username = `test-user-${crypto.randomUUID()}`;
 const password = `test-password-${crypto.randomUUID()}`;
 const guidedUsername = `guided-user-${crypto.randomUUID()}`;
 const guidedPassword = `guided-password-${crypto.randomUUID()}`;
+const configuredUsername = `configured-user-${crypto.randomUUID()}`;
+const configuredPassword = `configured-password-${crypto.randomUUID()}`;
+const configuredGuidedUsername = `configured-guided-user-${crypto.randomUUID()}`;
+const configuredGuidedPassword = `configured-guided-password-${crypto.randomUUID()}`;
 const sessionSecret = crypto.randomBytes(32).toString("hex");
 const origin = "https://northstar-business-dashboard.vercel.app";
 const trustedCrossOrigin = "https://seedcreativeworks-onthegrid.github.io";
 const cookieName = "northstar_demo_session";
 
 process.env.SESSION_SECRET = sessionSecret;
+process.env.NORTHSTAR_DEMO_USERNAME = configuredUsername;
+process.env.NORTHSTAR_DEMO_PASSWORD = configuredPassword;
+process.env.NORTHSTAR_GUIDED_USERNAME = configuredGuidedUsername;
+process.env.NORTHSTAR_GUIDED_PASSWORD = configuredGuidedPassword;
 
 let tempRoot;
 let handlers;
@@ -199,6 +207,36 @@ test("Vercel handlers enforce login, signed sessions, and logout", async () => {
   );
   assert.equal(logout.statusCode, 200);
   assert.match(logout.headers.get("set-cookie"), /Max-Age=0/);
+});
+
+test("configured Vercel demo credentials remain valid without matching database rows", async () => {
+  const direct = await invoke(
+    handlers.login,
+    requestMock({
+      method: "POST",
+      headers: { origin },
+      body: { username: configuredUsername, password: configuredPassword },
+    }),
+  );
+  assert.equal(direct.statusCode, 200);
+  assert.equal(direct.body.flow, "direct");
+  assert.equal(direct.body.profile, "ben");
+
+  const guided = await invoke(
+    handlers.login,
+    requestMock({
+      method: "POST",
+      headers: { origin },
+      body: {
+        username: configuredGuidedUsername,
+        password: configuredGuidedPassword,
+      },
+    }),
+  );
+  assert.equal(guided.statusCode, 200);
+  assert.equal(guided.body.flow, "guided");
+  assert.equal(guided.body.profile, null);
+  assert.equal(guided.body.questionnaireRequired, true);
 });
 
 test("guided Vercel sessions select and restore a locked profile", async () => {

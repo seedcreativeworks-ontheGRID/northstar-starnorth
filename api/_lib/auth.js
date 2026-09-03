@@ -86,6 +86,13 @@ function clientKey(request) {
   return (request.headers["x-forwarded-for"] || request.socket?.remoteAddress || "unknown").split(",")[0].trim();
 }
 
+function configuredCredentialMatch(username, password, expectedUsername, expectedPassword) {
+  if (!expectedUsername || !expectedPassword) return false;
+  const digest = (value) => crypto.createHash("sha256").update(value).digest();
+  return crypto.timingSafeEqual(digest(username), digest(expectedUsername)) &&
+    crypto.timingSafeEqual(digest(password), digest(expectedPassword));
+}
+
 async function login(request, response, json, body) {
   const now = Date.now();
   const key = clientKey(request);
@@ -104,14 +111,26 @@ async function login(request, response, json, body) {
     await reject();
     return;
   }
-  const user = await findUserByUsername(username);
-  const passwordMatches = await verifyPassword(user?.password_hash, password);
-  if (!user || !passwordMatches) {
-    await reject();
-    return;
+
+  let flow;
+  let profile;
+  if (configuredCredentialMatch(username, password, process.env.NORTHSTAR_DEMO_USERNAME, process.env.NORTHSTAR_DEMO_PASSWORD)) {
+    flow = "direct";
+    profile = "ben";
+  } else if (configuredCredentialMatch(username, password, process.env.NORTHSTAR_GUIDED_USERNAME, process.env.NORTHSTAR_GUIDED_PASSWORD)) {
+    flow = "guided";
+    profile = null;
+  } else {
+    const user = await findUserByUsername(username);
+    const passwordMatches = await verifyPassword(user?.password_hash, password);
+    if (!user || !passwordMatches) {
+      await reject();
+      return;
+    }
+    ({ flow, profile } = user);
   }
+
   await clearFailures(key);
-  const { flow, profile } = user;
   setSessionCookie(response, { flow, profile, exp: Math.floor(now / 1000) + TTL_SECONDS }, request);
   json(response, 200, { authenticated: true, flow, profile, questionnaireRequired: flow === "guided" });
 }
