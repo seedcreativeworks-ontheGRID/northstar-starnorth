@@ -43,11 +43,32 @@ export function subscribeToAuthInvalidation(onInvalidated: () => void) {
   };
 }
 
+// Only set on the GitHub Pages build (see package.json's build:pages) --
+// that static mirror has no API of its own, so every relative call must be
+// redirected to the real one on Vercel, cross-origin. Mirrors the wiring in
+// main.tsx / custom-fetch.ts, but those only cover the generated API client
+// -- these hand-written auth calls (login, logout, session, profile) need
+// the same treatment and were missing it, so they silently hit the GitHub
+// Pages origin itself instead of Vercel.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string | undefined;
+
+function resolveApiUrl(path: string): string {
+  if (!API_BASE_URL || !path.startsWith("/")) return path;
+  return `${API_BASE_URL.replace(/\/+$/, "")}${path}`;
+}
+
 export async function authenticatedFetch(
-  input: RequestInfo | URL,
+  path: string,
   init?: RequestInit,
 ) {
-  const response = await fetch(input, init);
+  const response = await fetch(resolveApiUrl(path), {
+    ...init,
+    // Cookie-based sessions need credentials explicitly included once
+    // requests cross an origin -- fetch defaults to "same-origin", which
+    // never sends or stores cookies cross-site. Overrides whatever the
+    // caller passed so this can't silently regress per call site.
+    credentials: API_BASE_URL ? "include" : "same-origin",
+  });
   if (response.status === 401) broadcastAuthInvalidation();
   return response;
 }

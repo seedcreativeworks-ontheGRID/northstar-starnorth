@@ -48,7 +48,7 @@ function AuthGate() {
     const generation = ++authGeneration.current;
     if (showChecking) setStatus("checking");
     try {
-      const response = await authenticatedFetch("/api/auth/session", { credentials: "same-origin" });
+      const response = await authenticatedFetch("/api/auth/session");
       const body = await response.json() as {
         authenticated?: boolean;
         profile?: "ben" | "james" | null;

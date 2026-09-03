@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ArrowRight, ArrowLeft, Check, LoaderCircle, LayoutDashboard } from "lucide-react";
+import { authenticatedFetch } from "@/auth-events";
 
 const QUESTIONS = [
   {
@@ -72,9 +73,8 @@ export function GuidedQuestionnaire({ onCompleted }: { onCompleted: (profile: "b
       setIsSubmitting(true);
       setError("");
       try {
-        const res = await fetch("/api/auth/profile", {
+        const res = await authenticatedFetch("/api/auth/profile", {
           method: "POST",
-          credentials: "same-origin",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ answers })
         });

@@ -460,7 +460,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     const response = await authenticatedFetch("/api/auth/logout", {
       method: "POST",
-      credentials: "same-origin",
     });
     if (!response.ok) {
       throw new Error("Unable to sign out. Please try again.");

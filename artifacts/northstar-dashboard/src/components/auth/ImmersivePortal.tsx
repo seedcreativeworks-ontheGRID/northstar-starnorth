@@ -3,6 +3,7 @@ import { ArrowRight, Building2, Eye, EyeOff, KeyRound, LoaderCircle, LogOut, Shi
 import { WovenBackground } from "./WovenBackground";
 import { GuidedQuestionnaire } from "./GuidedQuestionnaire";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { authenticatedFetch } from "@/auth-events";
 
 type Props = {
   initialStage?: "login" | "questionnaire";
@@ -37,9 +38,8 @@ export function ImmersivePortal({ initialStage = "login", onAuthenticated }: Pro
     setError("");
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await authenticatedFetch("/api/auth/login", {
         method: "POST",
-        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
@@ -66,9 +66,8 @@ export function ImmersivePortal({ initialStage = "login", onAuthenticated }: Pro
     setExitError("");
     setIsExiting(true);
     try {
-      const response = await fetch("/api/auth/logout", {
+      const response = await authenticatedFetch("/api/auth/logout", {
         method: "POST",
-        credentials: "same-origin",
       });
       if (!response.ok) {
         throw new Error("Unable to end the guided session");
