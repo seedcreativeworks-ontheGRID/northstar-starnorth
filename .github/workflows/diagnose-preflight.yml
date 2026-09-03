@@ -1,0 +1,25 @@
+name: Diagnose CORS preflight (temporary)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: OPTIONS preflight exactly as a browser sends it
+        run: |
+          curl -sS -i -X OPTIONS "https://northstar-business-dashboard.vercel.app/api/auth/login" \
+            -H "Origin: https://seedcreativeworks-onthegrid.github.io" \
+            -H "Access-Control-Request-Method: POST" \
+            -H "Access-Control-Request-Headers: content-type" \
+            -H "Sec-Fetch-Mode: cors" \
+            -H "Sec-Fetch-Site: cross-site"
+      - name: Then the actual POST with credentials semantics
+        run: |
+          curl -sS -i -X POST "https://northstar-business-dashboard.vercel.app/api/auth/login" \
+            -H "Origin: https://seedcreativeworks-onthegrid.github.io" \
+            -H "Content-Type: application/json" \
+            -H "Sec-Fetch-Mode: cors" \
+            -H "Sec-Fetch-Site: cross-site" \
+            -d '{"username":"northstarloginmain","password":"ishowlameat"}'
