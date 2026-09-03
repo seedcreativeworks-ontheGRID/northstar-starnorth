@@ -7,10 +7,11 @@ jobs:
   diagnose:
     runs-on: ubuntu-latest
     steps:
-      - name: Cross-origin login (exactly what the GitHub Pages mirror sends)
+      - name: Cross-origin login (exactly what a real browser sends, including Sec-Fetch-Site)
         run: |
           curl -sS -i -X POST "https://northstar-business-dashboard.vercel.app/api/auth/login" \
             -H "Origin: https://seedcreativeworks-onthegrid.github.io" \
+            -H "Sec-Fetch-Site: cross-site" \
             -H "Content-Type: application/json" \
             -d "{\"username\":\"${NORTHSTAR_DEMO_USERNAME}\",\"password\":\"${NORTHSTAR_DEMO_PASSWORD}\"}"
         env:
