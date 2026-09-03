@@ -1,0 +1,56 @@
+name: Diagnose login (temporary)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Inspect users table and verify current secrets against stored hashes
+        run: |
+          node -e '
+          const { Pool } = require("pg");
+          const { verify } = require("@node-rs/argon2");
+          (async () => {
+            const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
+            const { rows } = await pool.query("SELECT username, password_hash, flow, profile, length(username) as ulen, length(password_hash) as hlen FROM users ORDER BY flow");
+            console.log("Row count:", rows.length);
+            for (const row of rows) {
+              console.log(JSON.stringify({ username: row.username, ulen: row.ulen, flow: row.flow, profile: row.profile, hlen: row.hlen }));
+            }
+            const demo = rows.find((r) => r.flow === "direct");
+            const guided = rows.find((r) => r.flow === "guided");
+            if (demo) {
+              const ok = await verify(demo.password_hash, process.env.NORTHSTAR_DEMO_PASSWORD || "");
+              console.log("DEMO password from current secret verifies:", ok);
+              console.log("DEMO username exact match to current secret:", demo.username === process.env.NORTHSTAR_DEMO_USERNAME);
+            } else {
+              console.log("No direct/demo user row found at all.");
+            }
+            if (guided) {
+              const ok = await verify(guided.password_hash, process.env.NORTHSTAR_GUIDED_PASSWORD || "");
+              console.log("GUIDED password from current secret verifies:", ok);
+              console.log("GUIDED username exact match to current secret:", guided.username === process.env.NORTHSTAR_GUIDED_USERNAME);
+            } else {
+              console.log("No guided user row found at all.");
+            }
+            await pool.end();
+          })().catch((err) => { console.error(err); process.exit(1); });
+          '
+        working-directory: artifacts/northstar-dashboard
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NORTHSTAR_DEMO_USERNAME: ${{ secrets.NORTHSTAR_DEMO_USERNAME }}
+          NORTHSTAR_DEMO_PASSWORD: ${{ secrets.NORTHSTAR_DEMO_PASSWORD }}
+          NORTHSTAR_GUIDED_USERNAME: ${{ secrets.NORTHSTAR_GUIDED_USERNAME }}
+          NORTHSTAR_GUIDED_PASSWORD: ${{ secrets.NORTHSTAR_GUIDED_PASSWORD }}
