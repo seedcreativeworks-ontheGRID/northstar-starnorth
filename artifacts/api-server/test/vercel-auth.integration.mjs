@@ -1,11 +1,17 @@
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
-import { cp, mkdtemp, rm } from "node:fs/promises";
+import { cp, mkdtemp, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { after, before, test } from "node:test";
 import { fileURLToPath } from "node:url";
+import { hash } from "@node-rs/argon2";
+// Importing @workspace/db throws immediately if DATABASE_URL isn't set --
+// this test needs a real (local or free-tier) Postgres to seed real,
+// argon2-hashed users, since the Vercel login handler now checks the
+// database instead of comparing against env-var credentials directly.
+import { db, pool, usersTable } from "@workspace/db";
 
 const username = `test-user-${crypto.randomUUID()}`;
 const password = `test-password-${crypto.randomUUID()}`;
@@ -15,10 +21,6 @@ const sessionSecret = crypto.randomBytes(32).toString("hex");
 const origin = "https://northstar-business-dashboard.vercel.app";
 const cookieName = "northstar_demo_session";
 
-process.env.NORTHSTAR_DEMO_USERNAME = username;
-process.env.NORTHSTAR_DEMO_PASSWORD = password;
-process.env.NORTHSTAR_GUIDED_USERNAME = guidedUsername;
-process.env.NORTHSTAR_GUIDED_PASSWORD = guidedPassword;
 process.env.SESSION_SECRET = sessionSecret;
 
 let tempRoot;
@@ -79,6 +81,21 @@ function expiredCookie() {
 }
 
 before(async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      username text NOT NULL UNIQUE,
+      password_hash text NOT NULL,
+      flow text NOT NULL,
+      profile text,
+      created_at timestamp NOT NULL DEFAULT now()
+    )
+  `);
+  await db.insert(usersTable).values([
+    { username, passwordHash: await hash(password), flow: "direct", profile: "ben" },
+    { username: guidedUsername, passwordHash: await hash(guidedPassword), flow: "guided", profile: null },
+  ]);
+
   tempRoot = await mkdtemp(path.join(tmpdir(), "northstar-vercel-auth-"));
   const source = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
@@ -86,6 +103,16 @@ before(async () => {
   );
   const apiRoot = path.join(tempRoot, "api");
   await cp(source, apiRoot, { recursive: true });
+  // db.js and password.js require real packages (pg, @node-rs/argon2) --
+  // symlink in the dashboard's node_modules so those resolve from the
+  // isolated temp copy the same way they do in a real deployment.
+  await symlink(
+    path.resolve(
+      path.dirname(fileURLToPath(import.meta.url)),
+      "../../northstar-dashboard/node_modules",
+    ),
+    path.join(tempRoot, "node_modules"),
+  );
   const require = createRequire(import.meta.url);
   handlers = {
     login: require(path.join(apiRoot, "auth/login.js")),
@@ -101,6 +128,8 @@ before(async () => {
 
 after(async () => {
   if (tempRoot) await rm(tempRoot, { recursive: true, force: true });
+  await pool.query("DELETE FROM users WHERE username = $1 OR username = $2", [username, guidedUsername]);
+  await pool.end();
 });
 
 test("Vercel handlers enforce login, signed sessions, and logout", async () => {

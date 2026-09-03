@@ -2,5 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "buildCommand": "pnpm run build:vercel",
-  "outputDirectory": "artifacts/northstar-dashboard/dist/public"
+  "outputDirectory": "artifacts/northstar-dashboard/dist/public",
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
 }

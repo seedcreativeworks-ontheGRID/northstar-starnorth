@@ -1,0 +1,36 @@
+name: Provision database
+
+on:
+  workflow_dispatch:
+    inputs:
+      seed_demo_users:
+        description: "Also seed demo users (requires the NORTHSTAR_* secrets below)"
+        type: boolean
+        default: true
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Push users table schema
+        run: pnpm --filter db run push-force
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Seed demo users
+        if: ${{ inputs.seed_demo_users }}
+        run: pnpm --filter db run seed:users
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NORTHSTAR_DEMO_USERNAME: ${{ secrets.NORTHSTAR_DEMO_USERNAME }}
+          NORTHSTAR_DEMO_PASSWORD: ${{ secrets.NORTHSTAR_DEMO_PASSWORD }}
+          NORTHSTAR_GUIDED_USERNAME: ${{ secrets.NORTHSTAR_GUIDED_USERNAME }}
+          NORTHSTAR_GUIDED_PASSWORD: ${{ secrets.NORTHSTAR_GUIDED_PASSWORD }}
