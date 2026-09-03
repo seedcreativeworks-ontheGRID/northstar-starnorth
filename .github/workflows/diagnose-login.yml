@@ -1,0 +1,26 @@
+name: Diagnose login (temporary)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Preflight OPTIONS from the trusted origin
+        run: |
+          curl -sS -i -X OPTIONS "https://northstar-business-dashboard.vercel.app/api/auth/login" \
+            -H "Origin: https://seedcreativeworks-onthegrid.github.io" \
+            -H "Access-Control-Request-Method: POST" \
+            -H "Access-Control-Request-Headers: content-type"
+      - name: Cross-origin login POST with the current secret values
+        run: |
+          curl -sS -i -X POST "https://northstar-business-dashboard.vercel.app/api/auth/login" \
+            -H "Origin: https://seedcreativeworks-onthegrid.github.io" \
+            -H "Content-Type: application/json" \
+            -d "{\"username\":\"${NORTHSTAR_DEMO_USERNAME}\",\"password\":\"${NORTHSTAR_DEMO_PASSWORD}\"}"
+        env:
+          NORTHSTAR_DEMO_USERNAME: ${{ secrets.NORTHSTAR_DEMO_USERNAME }}
+          NORTHSTAR_DEMO_PASSWORD: ${{ secrets.NORTHSTAR_DEMO_PASSWORD }}
+      - name: Healthz sanity check
+        run: curl -sS -i "https://northstar-business-dashboard.vercel.app/api/healthz"
